@@ -1,0 +1,16 @@
+module "consul" {
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/consul?ref=main"
+
+  container_name = "platform-consul"
+  data_path      = var.data_path
+  config_path    = var.config_path
+  http_port      = var.http_port
+  dns_port       = var.dns_port
+  network_name   = var.network_name
+  datacenter     = "platform-dc1"
+
+  labels = {
+    "platform.env"       = var.environment
+    "platform.component" = "discovery"
+  }
+}

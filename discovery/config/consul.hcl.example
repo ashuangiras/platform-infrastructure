@@ -1,0 +1,34 @@
+# consul.hcl.example
+#
+# Copy this file to /srv/platform/consul/config/consul.hcl on the target host.
+# The config_path variable in terraform.tfvars must point to the directory
+# containing this file (renamed to consul.hcl, not consul.hcl.example).
+#
+# This file is NOT managed by Terraform — it is mounted read-only into the
+# Consul container. Edit it manually and restart the container to apply changes.
+
+datacenter = "platform-dc1"
+data_dir   = "/consul/data"
+
+# Enable the built-in web UI (accessible at http://localhost:8500/ui)
+ui_config {
+  enabled = true
+}
+
+# Accept connections on all interfaces so the Docker bridge can reach the agent
+client_addr = "0.0.0.0"
+bind_addr   = "0.0.0.0"
+
+# Single-node bootstrap — upgrade to multi-node Raft when the platform grows
+bootstrap_expect = 1
+server           = true
+
+# Log verbosity — change to "debug" for troubleshooting
+log_level = "info"
+
+# Uncomment to enable ACLs (recommended for production)
+# acl {
+#   enabled                  = true
+#   default_policy           = "deny"
+#   enable_token_persistence = true
+# }

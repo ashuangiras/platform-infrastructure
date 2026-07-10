@@ -1,0 +1,22 @@
+# terraform.tfvars.example
+# Copy to terraform.tfvars and fill in real values.
+# NEVER commit terraform.tfvars — it is excluded by .gitignore.
+# Pass sensitive values via TF_VAR_* environment variables in CI.
+
+# MinIO credentials — store in Vault after first deploy
+minio_root_user     = "platform-admin"
+minio_root_password = "change-me-min-8-chars"
+
+# Host paths (create directories with correct ownership before terraform apply)
+# sudo mkdir -p /srv/platform/{minio/data,vault/{data,config},consul/{data,config}}
+# sudo chown -R 1000:1000 /srv/platform/minio/data
+# sudo chown -R 100:1000  /srv/platform/vault/data /srv/platform/vault/config
+# sudo chown -R 100:1000  /srv/platform/consul/data /srv/platform/consul/config
+minio_data_path    = "/srv/platform/minio/data"
+vault_data_path    = "/srv/platform/vault/data"
+vault_config_path  = "/srv/platform/vault/config"
+consul_data_path   = "/srv/platform/consul/data"
+consul_config_path = "/srv/platform/consul/config"
+
+# Environment label
+environment = "production"
