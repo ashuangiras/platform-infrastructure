@@ -1,0 +1,34 @@
+<!--
+  Pull request template for platform-infrastructure.
+  Governed by platform-compliance v2.6.0, profile PROF-TERRAFORM-ROOT-V1.
+-->
+
+## Summary
+
+<!-- What this change does and why. -->
+
+## Change Record
+
+Change Record: CHG-YYYYMMDD-NNN
+
+<!--
+  Replace the placeholder above with the actual change record ID.
+  CHG-001 policy requires the format "Change Record: CHG-YYYYMMDD-NNN" on one line.
+-->
+
+---
+
+## Agent Readiness & Retro (required — AGT-014)
+
+**Readiness check** — confirm before merge:
+
+- [ ] Author post-flight checks pass (lint, format, build, tests — see the author agent)
+- [ ] `module-reviewer` / `service-reviewer` / `lib-reviewer` / `infra-reviewer` has reviewed this change
+- [ ] Compliance gate CI is green (jobs 1–7), or failing controls are waived
+
+**Retrospective** — what did this change teach us, and how did the agents improve?
+
+- <!-- Replace this with at least one substantive bullet describing what was learned.
+     AGT-014 gate requires real prose here, not just checkboxes. -->
+
+-
