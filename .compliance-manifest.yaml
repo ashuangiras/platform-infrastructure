@@ -1,0 +1,20 @@
+schema_version: "1.0.0"
+
+repository:
+  name: platform-infrastructure
+  url: "https://github.com/ashuangiras/platform-infrastructure"
+  type: terraform-root
+  has_container_images: false
+
+declared_profiles:
+  - PROF-TERRAFORM-ROOT-V1
+
+technology_contexts:
+  - github
+  - github-actions
+  - terraform
+
+waiver_ids: []
+
+compliance_contact: platform-team
+last_updated: "2026-07-10"
