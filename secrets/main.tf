@@ -1,5 +1,5 @@
 module "vault" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/vault?ref=main"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/vault?ref=v1.0.0"
 
   container_name = "platform-vault"
   data_path      = var.data_path
