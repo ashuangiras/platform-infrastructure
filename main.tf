@@ -35,6 +35,7 @@ module "secrets" {
   capabilities      = var.vault_capabilities
   run_as_user       = var.vault_run_as_user
   keys_path         = var.vault_keys_path
+  logs_path         = var.vault_logs_path
 
   depends_on = [module.networking]
 }

@@ -142,3 +142,37 @@ resource "vault_kv_secret_v2" "oidc_minio" {
     issuer_url    = "${var.authentik_internal_url}/application/o/minio/"
   })
 }
+
+# ── OIDC application: Grafana ────────────────────────────────────────────────
+
+module "oidc_grafana" {
+  source = "./modules/oidc-application"
+
+  name        = "Grafana"
+  slug        = "grafana"
+  description = "Grafana observability dashboard"
+  meta_icon   = "https://grafana.com/static/img/menu/grafana2.svg"
+
+  allowed_redirect_uris = [
+    { matching_mode = "strict", url = "http://localhost:3000/login/generic_oauth" },
+  ]
+
+  authorization_flow_id = data.authentik_flow.default_authorization.id
+  invalidation_flow_id  = data.authentik_flow.default_invalidation.id
+  property_mapping_ids  = local.common_scope_mappings
+}
+
+# Write Grafana OIDC credentials to Vault
+resource "vault_kv_secret_v2" "oidc_grafana" {
+  mount = vault_mount.kv.path
+  name  = "platform/oidc/grafana"
+
+  data_json = jsonencode({
+    client_id     = module.oidc_grafana.client_id
+    client_secret = module.oidc_grafana.client_secret
+    auth_url      = "${var.authentik_internal_url}/application/o/authorize/"
+    token_url     = "${var.authentik_internal_url}/application/o/token/"
+    api_url       = "${var.authentik_internal_url}/application/o/userinfo/"
+    issuer_url    = "${var.authentik_internal_url}/application/o/grafana/"
+  })
+}

@@ -251,3 +251,9 @@ variable "authentik_url" {
   type        = string
   default     = "http://localhost:9080"
 }
+
+variable "vault_logs_path" {
+  description = "Host path for Vault audit logs (SEC-014). Leave empty to skip."
+  type        = string
+  default     = ""
+}

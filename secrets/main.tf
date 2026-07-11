@@ -1,5 +1,5 @@
 module "vault" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/vault?ref=v1.2.1"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/vault?ref=v1.4.0"
 
   container_name = "platform-vault"
   data_path      = var.data_path
@@ -12,6 +12,7 @@ module "vault" {
   capabilities      = var.capabilities
   run_as_user       = var.run_as_user
   keys_path         = var.keys_path
+  logs_path         = var.logs_path
   labels = {
     "platform.env"       = var.environment
     "platform.component" = "secrets"

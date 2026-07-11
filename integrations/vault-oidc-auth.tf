@@ -108,3 +108,23 @@ resource "vault_identity_group_alias" "platform_admins" {
   mount_accessor = vault_jwt_auth_backend.authentik.accessor
   canonical_id   = vault_identity_group.platform_admins.id
 }
+
+# ---------------------------------------------------------------------------
+# Vault audit device — SEC-014
+# Write a JSON audit log so every secret access, token operation, and policy
+# check is recorded. File audit is the minimum viable audit device.
+# ---------------------------------------------------------------------------
+
+resource "vault_audit" "file" {
+  type        = "file"
+  path        = "file/"
+  description = "JSON audit log — records all secret access, token, and auth events"
+
+  options = {
+    file_path     = "/vault/logs/audit.log"
+    log_raw       = "false" # never log plaintext secret values
+    hmac_accessor = "true"
+  }
+
+  depends_on = [vault_mount.kv]
+}
