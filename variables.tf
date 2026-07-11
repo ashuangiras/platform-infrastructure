@@ -224,3 +224,24 @@ variable "authentik_https_port" {
   type        = number
   default     = 9444
 }
+
+# ── Provider configuration (integrations) ────────────────────────────────────
+
+variable "vault_addr" {
+  description = "Vault API address. Used by vault provider and deploy.sh."
+  type        = string
+  default     = "http://localhost:8200"
+}
+
+variable "vault_token" {
+  description = "Vault root token. Set by deploy.sh from ~/.platform/vault-keys.json. Do not hardcode."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "authentik_url" {
+  description = "Authentik URL from the host. Used by authentik provider."
+  type        = string
+  default     = "http://localhost:9080"
+}

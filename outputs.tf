@@ -69,3 +69,25 @@ output "authentik_issuer_url" {
   description = "Authentik OIDC issuer URL — configure in Vault JWT auth and Grafana OAuth2."
   value       = module.identity.authentik_issuer_url
 }
+
+# ── Integrations ─────────────────────────────────────────────────────────────
+
+output "vault_kv_path" {
+  description = "Vault KV v2 secret mount path."
+  value       = module.integrations.vault_kv_mount
+}
+
+output "vault_oidc_path" {
+  description = "Vault OIDC auth backend path. Use with: vault login -method=oidc -path=oidc"
+  value       = module.integrations.vault_oidc_path
+}
+
+output "authentik_vault_client_id" {
+  description = "Authentik OIDC client ID for Vault."
+  value       = module.integrations.authentik_vault_client_id
+}
+
+output "authentik_minio_client_id" {
+  description = "Authentik OIDC client ID for MinIO."
+  value       = module.integrations.authentik_minio_client_id
+}

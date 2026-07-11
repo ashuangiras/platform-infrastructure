@@ -14,6 +14,14 @@ terraform {
       source  = "hashicorp/vault"
       version = "~> 4.0"
     }
+    authentik = {
+      source  = "goauthentik/authentik"
+      version = "~> 2024.8"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
 
   # platform-infrastructure uses a local state backend (ADR-0014 + ADR-0020).
@@ -35,3 +43,20 @@ provider "docker" {
   # Uses the local Docker socket by default (/var/run/docker.sock).
   # Override with DOCKER_HOST env var if the Docker daemon is remote.
 }
+
+# Root-level provider stubs — actual configuration lives in integrations/versions.tf
+# These must be declared here because Terraform requires all child module providers
+# to be available at the root level.
+provider "vault" {
+  address         = var.vault_addr
+  token           = var.vault_token
+  skip_tls_verify = true
+}
+
+provider "authentik" {
+  url      = var.authentik_url
+  token    = var.authentik_bootstrap_token
+  insecure = true
+}
+
+provider "null" {}
