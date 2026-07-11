@@ -4,6 +4,45 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 
 ---
 
+## 2026-07-12 — chore: bump platform-compliance ref v4.0.0 -> v4.0.3
+
+**Change Record:** CHG-20260712-001
+
+- **Compliance ref bump (v4.0.0 → v4.0.3)**: `origin/main` was actually pinned at **v4.0.0** — the
+  v4.0.2 branch (CHG-20260711-068) was authored but **never merged** — so this change moves the live
+  pin **v4.0.0 → v4.0.3 directly, skipping v4.0.1/v4.0.2**. The diff touches only
+  `.github/workflows/compliance.yml` (header comment, `uses:` ref, `platform-compliance-ref:`) and
+  the `.github/copilot-instructions.md` header, but this single bump **activates the full v4.0.2
+  blast radius plus the v4.0.3 fix at once**, so the whole merge gate was re-simulated locally
+  before trusting it.
+- **SUP-001 now PASS (0 violations) — upstream policy fix, NOT a waiver**: v4.0.3's
+  `POL-SUP-001-TERRAFORM-001` now honours immutable `git::…?ref=<semver-tag|40-hex-sha>` pinning and
+  **exempts local `./` modules** from the registry-`version` check. This repo's 7 tag-pinned `git::`
+  modules (and 10 in-repo local modules) were previously bogus-flagged (~17 violations under v4.0.0/
+  v4.0.2 — see the CHG-20260711-068 entry). The false-positive was escalated upstream to the
+  platform-compliance policy-engineer and **landed as a real policy fix in v4.0.3**, so SUP-001 flips
+  from **fail → pass** with zero in-repo HCL changes and no waiver.
+- **SRC-001 / SRC-002 now PASS — live branch-protection hardening**: both previously blocked solely
+  on `dismiss_stale_reviews: false` in `main` protection. Live `main` was hardened to
+  `dismiss_stale_reviews=true` (all other hardened fields intact: `enforce_admins=true`, ≥1 review,
+  `require_code_owner_reviews=true`, strict required check `Compliance: Merge Gate`,
+  `required_linear_history`, `required_conversation_resolution`, `required_signatures`, no force-push/
+  deletion), clearing both SRC controls.
+- **SEC-001 = pass**: secret scanning + push protection enabled, **0 open** secret-scanning alerts —
+  the v4.0.2 collector (`sec-secrets.json`) now evaluates a real pass on this repo.
+- **Full merge gate re-simulated locally at v4.0.3 = genuine green**: `merge_gate = PASS`, 39 pass;
+  the only two fails are **IAC-002** (plan-before-apply) and **IAC-005** (drift-detection), which are
+  **not merge-gate BLOCK controls**. Nothing regressed.
+
+**Rule learned:** re-simulate the *full* merge gate after any compliance-ref bump — a single patch
+release can flip a blocking control fail → pass (or inert → blocking). When a blocking control is a
+genuine policy false-positive (SUP-001 not recognising `git:: ?ref=` pinning), escalate it upstream
+and land the fix in the governed compliance release rather than faking a status or filing a waiver;
+a well-pinned repo should pass honestly once the policy is corrected. Also verify the *actual* base
+ref on `origin/main` (here v4.0.0, not the assumed v4.0.2) so the PR states the true blast radius.
+
+---
+
 ## 2026-07-11 — fix: resolve policy failures + pin module sources to v1.0.0
 
 **Change Record:** CHG-20260711-049
