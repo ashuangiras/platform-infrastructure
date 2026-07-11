@@ -206,6 +206,13 @@ variable "authentik_admin_email" {
   default     = "admin@platform.local"
 }
 
+variable "authentik_bootstrap_token" {
+  description = "Predictable API token set via AUTHENTIK_BOOTSTRAP_TOKEN on first Authentik startup. Used by the goauthentik/authentik Terraform provider to configure OIDC apps without web UI interaction. Treat as a secret."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "authentik_http_port" {
   description = "Host port for Authentik HTTP."
   type        = number

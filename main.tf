@@ -72,10 +72,18 @@ module "identity" {
 
   network_name             = module.networking.network_name
   secret_key               = var.authentik_secret_key
-  database_url             = module.data.postgresql_connections["authentik"].url
-  redis_url                = module.data.redis_connections["authentik"].url
+  pg_host                  = module.data.postgresql_host
+  pg_port                  = module.data.postgresql_port
+  pg_user                  = "authentik"
+  pg_password              = var.pg_authentik_password
+  pg_name                  = "authentik"
+  redis_host               = module.data.redis_host
+  redis_port               = module.data.redis_port
+  redis_user               = "authentik"
+  redis_password           = var.redis_authentik_password
   bootstrap_admin_password = var.authentik_admin_password
   bootstrap_admin_email    = var.authentik_admin_email
+  bootstrap_token          = var.authentik_bootstrap_token
   http_port                = var.authentik_http_port
   https_port               = var.authentik_https_port
   environment              = var.environment

@@ -28,7 +28,8 @@ redis_admin_password     = "redis-admin-staging"
 redis_authentik_password = "redis-authentik-staging"
 
 # Identity (Authentik)
-authentik_secret_key     = "staging-secret-key-please-change-this-to-50plus-random-chars"
-authentik_admin_password = "admin-staging"
-authentik_http_port      = 9080
-authentik_https_port     = 9444
+authentik_secret_key      = "staging-secret-key-please-change-this-to-50plus-random-chars"
+authentik_admin_password  = "admin-staging"
+authentik_bootstrap_token = "platform-bootstrap-token-staging"
+authentik_http_port       = 9080
+authentik_https_port      = 9444
