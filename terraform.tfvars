@@ -15,6 +15,7 @@ environment = "staging"
 # macOS Docker Desktop compatibility overrides
 vault_drop_capabilities = []
 vault_run_as_user       = ""
+vault_keys_path         = "/Users/angirasa/.platform/vault-keys.json"
 consul_run_as_user      = ""
 
 # Data infrastructure

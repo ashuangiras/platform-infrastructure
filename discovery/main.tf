@@ -1,5 +1,5 @@
 module "consul" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/consul?ref=v1.1.1"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/hashicorp/consul?ref=v1.1.3"
 
   container_name = "platform-consul"
   data_path      = var.data_path

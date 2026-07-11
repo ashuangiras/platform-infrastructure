@@ -126,6 +126,12 @@ variable "vault_run_as_user" {
   default     = "100:1000"
 }
 
+variable "vault_keys_path" {
+  description = "Path where Vault init output (unseal keys + root token) is stored. Must be outside the repo and never committed to git."
+  type        = string
+  default     = "~/.platform/vault-keys.json"
+}
+
 variable "consul_run_as_user" {
   description = "Consul container user. Set to empty string on macOS Docker Desktop."
   type        = string
