@@ -64,8 +64,6 @@ module "data" {
   redis_authentik_password = var.redis_authentik_password
   environment              = var.environment
   run_as_user              = var.data_run_as_user
-
-  depends_on = [module.networking]
 }
 
 module "identity" {
@@ -81,6 +79,4 @@ module "identity" {
   https_port               = var.authentik_https_port
   environment              = var.environment
   run_as_user              = var.data_run_as_user
-
-  depends_on = [module.data]
 }
