@@ -34,3 +34,9 @@ variable "run_as_user" {
   type        = string
   default     = "100:1000"
 }
+
+variable "keys_path" {
+  description = "Path where Vault init output (unseal keys + root token) is stored. Never commit this file."
+  type        = string
+  default     = "~/.platform/vault-keys.json"
+}

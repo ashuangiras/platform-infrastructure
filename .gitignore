@@ -28,3 +28,8 @@ terraform.tfstate.staging
 terraform.tfstate.staging.backup
 tfplan
 *.bak
+
+# Vault init keys — contains plaintext unseal keys and root token
+# The actual file lives outside the repo per vault_keys_path, but guard against accidents
+vault-keys*.json
+*vault-keys*
