@@ -17,11 +17,11 @@ variable "bootstrap_admin_password" {
 }
 variable "http_port" {
   type    = number
-  default = 9000
+  default = 9080
 }
 variable "https_port" {
   type    = number
-  default = 9443
+  default = 9444
 }
 variable "bootstrap_admin_email" {
   type    = string

@@ -203,11 +203,11 @@ variable "authentik_admin_email" {
 variable "authentik_http_port" {
   description = "Host port for Authentik HTTP."
   type        = number
-  default     = 9000
+  default     = 9080
 }
 
 variable "authentik_https_port" {
   description = "Host port for Authentik HTTPS."
   type        = number
-  default     = 9443
+  default     = 9444
 }
