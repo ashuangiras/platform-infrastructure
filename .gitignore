@@ -17,6 +17,7 @@ terraform.tfstate.backup
 crash.log
 
 # State migration backend config — never commit this
+backend.hcl
 backend-minio.hcl
 
 # OS / IDE

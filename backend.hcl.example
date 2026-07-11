@@ -1,0 +1,25 @@
+# backend.hcl.example
+#
+# Copy to backend.hcl and fill in the MinIO credentials before running:
+#   terraform init -backend-config=backend.hcl
+#
+# backend.hcl is excluded by .gitignore — NEVER commit it.
+# Store the access_key and secret_key in Vault after first deploy.
+#
+# MinIO state bucket setup (run once after MinIO is running):
+#   mc alias set local http://localhost:9000 <root-user> <root-password>
+#   mc mb local/platform-terraform-state
+#   mc version enable local/platform-terraform-state
+
+bucket   = "platform-terraform-state"
+key      = "platform-infrastructure/terraform.tfstate"
+region   = "us-east-1"                 # required field; ignored by MinIO
+endpoint = "http://localhost:9000"     # MinIO API port from terraform.tfvars (default 9000)
+
+access_key = ""   # MinIO access key — create in MinIO console → Access Keys
+secret_key = ""   # MinIO secret key — store in Vault after creation
+
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_region_validation      = true
+force_path_style            = true

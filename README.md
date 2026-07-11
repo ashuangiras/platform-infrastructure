@@ -67,14 +67,36 @@ vault operator init
 vault operator unseal  # run 3 times with different unseal keys
 ```
 
-## State migration to MinIO (PC-0138)
+## State backend (ADR-0014)
 
-Once MinIO is running, create the state bucket then:
-```bash
-# Create backend-minio.hcl (see outputs.state_migration_backend_config for the content)
-terraform init -migrate-state -backend-config=backend-minio.hcl
-```
-Update `versions.tf` to use the `s3` backend, commit, and re-init.
+The Terraform state is stored in MinIO (self-hosted S3-compatible storage), providing versioned, lockable state without external cloud dependency.
+
+### Initial setup
+
+1. Copy the backend config template and fill in MinIO credentials:
+   ```bash
+   cp backend.hcl.example backend.hcl
+   # Edit backend.hcl — set access_key and secret_key
+   ```
+
+2. Create the state bucket in MinIO (after MinIO is running):
+   ```bash
+   mc alias set local http://localhost:9000 <root-user> <root-password>
+   mc mb local/platform-terraform-state
+   mc version enable local/platform-terraform-state
+   ```
+
+3. Initialise Terraform with the backend config:
+   ```bash
+   terraform init -backend-config=backend.hcl
+   ```
+
+4. If migrating from a previous local state file:
+   ```bash
+   terraform init -migrate-state -backend-config=backend.hcl
+   ```
+
+**`backend.hcl` is in `.gitignore`** — never commit it. After creating the MinIO access key, store it in Vault.
 
 ## Compliance
 

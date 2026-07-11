@@ -47,20 +47,8 @@ output "consul_dns_address" {
   value       = module.discovery.dns_address
 }
 
-# ── State migration helper ─────────────────────────────────────────────────
-output "state_migration_backend_config" {
-  description = "S3 backend config snippet for backend-minio.hcl. Use after MinIO is running and the state bucket exists."
-  value       = <<-EOT
-    # backend-minio.hcl
-    bucket                      = "platform-terraform-state"
-    key                         = "platform-infrastructure/terraform.tfstate"
-    region                      = "us-east-1"
-    endpoint                    = "${module.storage.api_endpoint}"
-    access_key                  = "<minio-access-key>"
-    secret_key                  = "<minio-secret-key>"
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-    force_path_style            = true
-  EOT
+# ── State backend reference ────────────────────────────────────────────────
+output "minio_s3_endpoint" {
+  description = "MinIO S3 endpoint to put in backend.hcl as the 'endpoint' value."
+  value       = module.storage.api_endpoint
 }

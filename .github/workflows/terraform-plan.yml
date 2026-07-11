@@ -1,0 +1,76 @@
+name: "Terraform Plan (IAC-002)"
+
+# Runs terraform validate on every PR and push.
+# A plan requires live infrastructure (Docker + MinIO state backend), so the full
+# `terraform plan` is expected to be run locally by the operator and its output
+# pasted into the PR description (IAC-002 plan-before-apply requirement).
+#
+# This workflow satisfies the CI portion of IAC-002 by:
+#   1. Verifying the configuration is syntactically valid (terraform validate)
+#   2. Checking formatting (terraform fmt)
+#   3. Posting a reminder if the plan output is absent from the PR description
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: "IAC-002 — Validate Terraform configuration"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive .
+
+      - name: Terraform init (no backend — syntax check only)
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Check PR description contains plan output
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const hasPlan = body.includes('terraform plan') ||
+                            body.includes('Plan:') ||
+                            body.includes('No changes.');
+            if (!hasPlan) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: [
+                  '## ⚠️ IAC-002 — Plan output not found in PR description',
+                  '',
+                  'This repository requires a `terraform plan` output to be included',
+                  'in the PR description before merging (IAC-002: plan-before-apply).',
+                  '',
+                  'Run the plan locally and paste the output into the PR description:',
+                  '```bash',
+                  'cp backend.hcl.example backend.hcl  # fill in credentials',
+                  'terraform init -backend-config=backend.hcl',
+                  'terraform plan -out=tfplan',
+                  'terraform show -no-color tfplan',
+                  '```',
+                ].join('\n'),
+              });
+              core.warning('IAC-002: PR description does not contain terraform plan output');
+            }
