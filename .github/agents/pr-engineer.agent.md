@@ -1,6 +1,6 @@
 ---
 description: "Use when opening a PR, executing bootstrap-merge, running terraform plan/apply, or tagging an infrastructure release for platform-infrastructure. Owns branch-protection toggling, deployment gate verification, and change record allocation."
-name: "PR Engineer"
+name: "Infra PR Engineer"
 tools: [read, edit, execute, github/*, todo]
 user-invocable: true
 ---
