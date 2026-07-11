@@ -30,16 +30,44 @@ This ledger records meaningful updates to the agent configuration in `platform-i
   deletion), clearing both SRC controls.
 - **SEC-001 = pass**: secret scanning + push protection enabled, **0 open** secret-scanning alerts —
   the v4.0.2 collector (`sec-secrets.json`) now evaluates a real pass on this repo.
-- **Full merge gate re-simulated locally at v4.0.3 = genuine green**: `merge_gate = PASS`, 39 pass;
-  the only two fails are **IAC-002** (plan-before-apply) and **IAC-005** (drift-detection), which are
+- **SEC-013 block-FAIL in real CI — root cause was a stale, factually-wrong committed env label**:
+  the actual v4.0.3 CI run surfaced **SEC-013 (block)**, not a clean green. `POL-SEC-013-TERRAFORM-001`
+  flags `skip_tls_verify`/`insecure`/`tls_disable` in any `.tf`, but returns `not_applicable` when the
+  declared environment is `staging` (a first-class, ADR-0021/HIGH-001-governed TLS deferral). The
+  collector resolves `declared_environment` by reading `terraform.tfvars` first (gitignored → present
+  locally, ABSENT in CI) then falling back to the committed `terraform.tfvars.example`. This repo IS
+  genuinely macOS staging: the real gitignored `terraform.tfvars` says `environment = "staging"`, and
+  `versions.tf` disables TLS on the vault/authentik providers precisely because it's a local staging
+  host with no TLS termination (deferred under HIGH-001/ADR-0021). But the committed
+  `terraform.tfvars.example` still ended with `environment = "production"` — a stale generic
+  placeholder. So local sims (which read the real tfvars) correctly saw `staging` → SEC-013
+  `not_applicable`, while CI (fresh checkout, no tfvars) read the example's `production` → SEC-013
+  block-FAIL. That stale label was the ONLY thing that made the real merge gate red
+  (SUP-001/SEC-001/SRC-001/SRC-002 all pass).
+- **Fix — correct the committed example, no waiver**: changed the final line of the committed
+  `terraform.tfvars.example` from `environment = "production"` → `environment = "staging"` (with a
+  comment making the staging posture and its HIGH-001/ADR-0021 TLS deferral explicit) so CI classifies
+  the environment truthfully → SEC-013 = `not_applicable`. This is **NOT a waiver** and **NOT a real
+  production TLS gap** — it corrects a stale, factually-wrong committed label so CI and local sims
+  agree on the repo's genuine staging reality. `versions.tf` is unchanged: the TLS settings are the
+  governed staging posture, and forcing them off would break the macOS staging deploy — exactly what
+  ADR-0021/HIGH-001 defers ("resolve/enable TLS before production promotion").
+- **Full merge gate re-simulated locally at v4.0.3 (CI-faithful) = genuine green after the fix**:
+  with the corrected example, `merge_gate = PASS`; SEC-013 flips to `not_applicable`, and the only
+  remaining fails are **IAC-002** (plan-before-apply) and **IAC-005** (drift-detection), which are
   **not merge-gate BLOCK controls**. Nothing regressed.
 
-**Rule learned:** re-simulate the *full* merge gate after any compliance-ref bump — a single patch
-release can flip a blocking control fail → pass (or inert → blocking). When a blocking control is a
-genuine policy false-positive (SUP-001 not recognising `git:: ?ref=` pinning), escalate it upstream
-and land the fix in the governed compliance release rather than faking a status or filing a waiver;
-a well-pinned repo should pass honestly once the policy is corrected. Also verify the *actual* base
-ref on `origin/main` (here v4.0.0, not the assumed v4.0.2) so the PR states the true blast radius.
+**Rule learned:** environment-dependent controls (like SEC-013) must have the environment declared in
+a **committed, CI-visible file** (`terraform.tfvars.example`), not only in the gitignored
+`terraform.tfvars` — otherwise local sims (which read the real tfvars) and CI (which cannot) will
+silently disagree, and CI is the source of truth. Re-simulate the *full* merge gate **as CI sees it
+(committed files only)** after any compliance-ref bump — a single patch release can flip a blocking
+control fail → pass (or inert → blocking), and a gitignored file can mask a real classification. When
+a blocking control is a genuine policy false-positive (SUP-001 not recognising `git:: ?ref=` pinning),
+escalate it upstream and land the fix in the governed compliance release rather than faking a status
+or filing a waiver; a well-pinned repo should pass honestly once the policy is corrected. Also verify
+the *actual* base ref on `origin/main` (here v4.0.0, not the assumed v4.0.2) so the PR states the true
+blast radius.
 
 ---
 

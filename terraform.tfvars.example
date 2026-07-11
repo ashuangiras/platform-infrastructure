@@ -18,5 +18,8 @@ vault_config_path  = "/srv/platform/vault/config"
 consul_data_path   = "/srv/platform/consul/data"
 consul_config_path = "/srv/platform/consul/config"
 
-# Environment label
-environment = "production"
+# Environment label — this repo's canonical deployment is the macOS local *staging*
+# host (PC-0139). TLS verification on the vault/authentik providers is intentionally
+# deferred here and tracked as HIGH-001 (ADR-0021): resolve/enable TLS before any
+# production promotion, at which point this flips to "production".
+environment = "staging"
