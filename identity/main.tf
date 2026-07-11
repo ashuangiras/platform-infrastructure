@@ -1,5 +1,5 @@
 module "authentik" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/identity/authentik?ref=v1.3.1"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/identity/authentik?ref=v1.3.2"
 
   container_name_prefix    = "platform-authentik"
   network_name             = var.network_name

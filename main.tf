@@ -32,8 +32,10 @@ module "secrets" {
   api_port          = var.vault_port
   environment       = var.environment
   drop_capabilities = var.vault_drop_capabilities
+  capabilities      = var.vault_capabilities
   run_as_user       = var.vault_run_as_user
   keys_path         = var.vault_keys_path
+  logs_path         = var.vault_logs_path
 
   depends_on = [module.networking]
 }
@@ -88,4 +90,49 @@ module "identity" {
   https_port               = var.authentik_https_port
   environment              = var.environment
   run_as_user              = var.data_run_as_user
+}
+
+# ---------------------------------------------------------------------------
+# Integrations — credential writes, OIDC wiring, user provisioning
+#
+# Requires all infra services to be healthy. deploy.sh performs a two-phase
+# apply: Stage 1 deploys infra, Stage 2 applies integrations.
+# ---------------------------------------------------------------------------
+module "integrations" {
+  source = "./integrations"
+
+  # Vault
+  vault_addr            = module.secrets.vault_api_address
+  vault_token           = module.secrets.vault_root_token
+  pg_superuser_password = var.pg_superuser_password
+  pg_host               = module.data.postgresql_host
+  pg_port               = module.data.postgresql_port
+  pg_databases = {
+    authentik = { user = "authentik", password = var.pg_authentik_password }
+  }
+  redis_host           = module.data.redis_host
+  redis_port           = module.data.redis_port
+  redis_admin_password = var.redis_admin_password
+  redis_users = {
+    authentik = { password = var.redis_authentik_password }
+  }
+
+  # Authentik
+  authentik_url            = module.identity.authentik_http_url
+  authentik_token          = var.authentik_bootstrap_token
+  authentik_internal_url   = "http://platform-authentik-server:9000"
+  authentik_admin_email    = var.authentik_admin_email
+  authentik_admin_password = var.authentik_admin_password
+  authentik_secret_key     = var.authentik_secret_key
+
+  # MinIO
+  minio_endpoint      = module.storage.minio_api_endpoint
+  minio_root_user     = var.minio_root_user
+  minio_root_password = var.minio_root_password
+
+  environment = var.environment
+
+  # Integrations providers need services running + healthy.
+  # Ensures vault_init_unseal and authentik startup complete before integrations runs.
+  depends_on = [module.secrets, module.identity, module.data]
 }

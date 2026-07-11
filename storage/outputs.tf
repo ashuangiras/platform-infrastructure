@@ -1,5 +1,10 @@
 output "api_endpoint" {
-  description = "MinIO S3 API endpoint from the host. Use as the Terraform S3 backend endpoint."
+  description = "MinIO S3 API endpoint from the host."
+  value       = module.minio.api_endpoint
+}
+
+output "minio_api_endpoint" {
+  description = "MinIO S3 API endpoint (alias)."
   value       = module.minio.api_endpoint
 }
 

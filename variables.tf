@@ -120,6 +120,12 @@ variable "vault_drop_capabilities" {
   default     = ["ALL"]
 }
 
+variable "vault_capabilities" {
+  description = "Vault Linux capabilities to add. Set to [] on macOS Docker Desktop (IPC_LOCK causes plan loops with kreuzwerker/docker provider)."
+  type        = list(string)
+  default     = ["IPC_LOCK"]
+}
+
 variable "vault_run_as_user" {
   description = "Vault container user. Set to empty string on macOS Docker Desktop."
   type        = string
@@ -223,4 +229,31 @@ variable "authentik_https_port" {
   description = "Host port for Authentik HTTPS."
   type        = number
   default     = 9444
+}
+
+# ── Provider configuration (integrations) ────────────────────────────────────
+
+variable "vault_addr" {
+  description = "Vault API address. Used by vault provider and deploy.sh."
+  type        = string
+  default     = "http://localhost:8200"
+}
+
+variable "vault_token" {
+  description = "Vault root token. Set by deploy.sh from ~/.platform/vault-keys.json. Do not hardcode."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "authentik_url" {
+  description = "Authentik URL from the host. Used by authentik provider."
+  type        = string
+  default     = "http://localhost:9080"
+}
+
+variable "vault_logs_path" {
+  description = "Host path for Vault audit logs (SEC-014). Leave empty to skip."
+  type        = string
+  default     = ""
 }
