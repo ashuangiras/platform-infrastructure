@@ -1,5 +1,5 @@
 module "docker_network" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/networking/docker-network?ref=main"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/networking/docker-network?ref=v1.0.0"
 
   name   = "platform-backend"
   driver = "bridge"
