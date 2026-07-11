@@ -62,3 +62,51 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 run empty and the gate fails. And AGT-012 keyword checks are literal substring matches on the
 lowercased file: never let a required safety keyword hide inside markdown emphasis (`**not**`),
 because `**` breaks the `do not` substring. Prefer plain-text phrasing for compliance keywords.
+
+---
+
+## 2026-07-11 — chore: bump platform-compliance ref v4.0.0 -> v4.0.2
+
+**Change Record:** CHG-20260711-068
+
+- **Compliance ref bump (v4.0.0 → v4.0.2)**: bumped the `platform-compliance-ref` input and the
+  cited ref in `.github/copilot-instructions.md`. The change touched only `compliance.yml` +
+  `copilot-instructions.md`, but v4.0.2 is a patch that silently **activates two previously-inert
+  BLOCK controls** on the merge gate — so the full gate was re-simulated locally before trusting it.
+- **SEC-001 became active (collector added in v4.0.2)**: v4.0.0 shipped no collector for
+  `sec-secrets.json`, so SEC-001 fell through to `not_applicable` (secret-scanning enforcement was
+  dead). v4.0.2's `collect-all-inputs.py` now emits `sec-secrets.json` (open GitHub secret-scanning
+  alert count + optional gitleaks scan), so SEC-001 evaluates a real pass/fail and **blocks**.
+- **SUP-001 became blocking (engine normalization added in v4.0.2)**: the `SUP-001-TERRAFORM`
+  policy is unchanged between v4.0.0 and v4.0.2, but v4.0.2's engine added `control_id_of()` which
+  strips the `-TF` suffix and records the terraform result under catalog id **`SUP-001`** (a merge
+  gate BLOCK control) instead of the old context-scoped `SUP-001-TF` (which was not in the block
+  set → warn). Same failing policy; a pinning failure now **blocks** instead of warning.
+- **SEC-001 triage result → PASS (no action needed)**: live `security_and_analysis` already had
+  `secret_scanning: enabled` and `secret_scanning_push_protection: enabled`; gitleaks returned 0
+  findings and there were **0 open** secret-scanning alerts. No `gh api PATCH` enablement was
+  required — the control's target gap did not exist on this repo. SEC-001 = `pass`.
+- **SUP-001 triage result → FAIL (policy false-positive, escalated, NOT waived)**: this repo is
+  genuinely well-pinned — all **7** external `git::` module sources are tag-pinned
+  (`?ref=v1.3.2 … v1.1.0`, corroborated by the collector's `modules_with_mutable_refs: []`) and all
+  provider/`required_version` constraints are bounded (`~>`). SUP-001 nonetheless **failed with 17
+  violations** because `SUP-001-TERRAFORM` evaluates the registry-style `version` argument, which is
+  empty for every `git::` and local `./` module, so it flags all 17 module calls (7 correctly
+  tag-pinned git modules + 10 in-repo local modules that can never carry a `version`). There is **no
+  valid in-repo Terraform fix** (adding `version =` to a `git::`/local module is invalid HCL and
+  would break IAC-001/validate) and it must **not** be waived — escalated to the platform-compliance
+  policy-engineer to make the policy honour `?ref=` git pinning and exempt local modules.
+- **Regression noted (independent of the bump)**: SRC-001 and SRC-002 also block, both solely on
+  `dismiss_stale_reviews: false` in `main` branch protection. The SRC policies are unchanged across
+  v4.0.0→v4.0.2, so this is a **live GitHub branch-protection state gap**, not a ref-bump regression;
+  remediation (`dismiss_stale_reviews=true`, requires `PLATFORM_ADMIN_TOKEN`) is flagged for a human
+  with admin scope rather than changed unilaterally.
+
+**Rule learned:** a compliance patch release can silently activate previously-inert BLOCK controls
+(a new collector emitting an input, or an engine change that re-classifies a warn-level result under
+a blocking catalog id) even when the repo's own diff is trivial — **always re-simulate the full
+merge gate locally after any compliance-ref bump**, never trust an upstream "expected PASS" handoff.
+Treat a newly-active security control as a genuine gap to fix (enable the setting), not waive — but
+equally, when a newly-blocking control is a policy false-positive (e.g. SUP-001 not recognising
+`git:: ?ref=` pinning), the honest fix is to escalate the policy upstream, not to fake a pass or add
+a waiver.
