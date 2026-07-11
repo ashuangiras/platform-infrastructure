@@ -4,6 +4,73 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 
 ---
 
+## 2026-07-12 — chore: bump platform-compliance ref v4.0.0 -> v4.0.3
+
+**Change Record:** CHG-20260712-001
+
+- **Compliance ref bump (v4.0.0 → v4.0.3)**: `origin/main` was actually pinned at **v4.0.0** — the
+  v4.0.2 branch (CHG-20260711-068) was authored but **never merged** — so this change moves the live
+  pin **v4.0.0 → v4.0.3 directly, skipping v4.0.1/v4.0.2**. The diff touches only
+  `.github/workflows/compliance.yml` (header comment, `uses:` ref, `platform-compliance-ref:`) and
+  the `.github/copilot-instructions.md` header, but this single bump **activates the full v4.0.2
+  blast radius plus the v4.0.3 fix at once**, so the whole merge gate was re-simulated locally
+  before trusting it.
+- **SUP-001 now PASS (0 violations) — upstream policy fix, NOT a waiver**: v4.0.3's
+  `POL-SUP-001-TERRAFORM-001` now honours immutable `git::…?ref=<semver-tag|40-hex-sha>` pinning and
+  **exempts local `./` modules** from the registry-`version` check. This repo's 7 tag-pinned `git::`
+  modules (and 10 in-repo local modules) were previously bogus-flagged (~17 violations under v4.0.0/
+  v4.0.2 — see the CHG-20260711-068 entry). The false-positive was escalated upstream to the
+  platform-compliance policy-engineer and **landed as a real policy fix in v4.0.3**, so SUP-001 flips
+  from **fail → pass** with zero in-repo HCL changes and no waiver.
+- **SRC-001 / SRC-002 now PASS — live branch-protection hardening**: both previously blocked solely
+  on `dismiss_stale_reviews: false` in `main` protection. Live `main` was hardened to
+  `dismiss_stale_reviews=true` (all other hardened fields intact: `enforce_admins=true`, ≥1 review,
+  `require_code_owner_reviews=true`, strict required check `Compliance: Merge Gate`,
+  `required_linear_history`, `required_conversation_resolution`, `required_signatures`, no force-push/
+  deletion), clearing both SRC controls.
+- **SEC-001 = pass**: secret scanning + push protection enabled, **0 open** secret-scanning alerts —
+  the v4.0.2 collector (`sec-secrets.json`) now evaluates a real pass on this repo.
+- **SEC-013 block-FAIL in real CI — root cause was a stale, factually-wrong committed env label**:
+  the actual v4.0.3 CI run surfaced **SEC-013 (block)**, not a clean green. `POL-SEC-013-TERRAFORM-001`
+  flags `skip_tls_verify`/`insecure`/`tls_disable` in any `.tf`, but returns `not_applicable` when the
+  declared environment is `staging` (a first-class, ADR-0021/HIGH-001-governed TLS deferral). The
+  collector resolves `declared_environment` by reading `terraform.tfvars` first (gitignored → present
+  locally, ABSENT in CI) then falling back to the committed `terraform.tfvars.example`. This repo IS
+  genuinely macOS staging: the real gitignored `terraform.tfvars` says `environment = "staging"`, and
+  `versions.tf` disables TLS on the vault/authentik providers precisely because it's a local staging
+  host with no TLS termination (deferred under HIGH-001/ADR-0021). But the committed
+  `terraform.tfvars.example` still ended with `environment = "production"` — a stale generic
+  placeholder. So local sims (which read the real tfvars) correctly saw `staging` → SEC-013
+  `not_applicable`, while CI (fresh checkout, no tfvars) read the example's `production` → SEC-013
+  block-FAIL. That stale label was the ONLY thing that made the real merge gate red
+  (SUP-001/SEC-001/SRC-001/SRC-002 all pass).
+- **Fix — correct the committed example, no waiver**: changed the final line of the committed
+  `terraform.tfvars.example` from `environment = "production"` → `environment = "staging"` (with a
+  comment making the staging posture and its HIGH-001/ADR-0021 TLS deferral explicit) so CI classifies
+  the environment truthfully → SEC-013 = `not_applicable`. This is **NOT a waiver** and **NOT a real
+  production TLS gap** — it corrects a stale, factually-wrong committed label so CI and local sims
+  agree on the repo's genuine staging reality. `versions.tf` is unchanged: the TLS settings are the
+  governed staging posture, and forcing them off would break the macOS staging deploy — exactly what
+  ADR-0021/HIGH-001 defers ("resolve/enable TLS before production promotion").
+- **Full merge gate re-simulated locally at v4.0.3 (CI-faithful) = genuine green after the fix**:
+  with the corrected example, `merge_gate = PASS`; SEC-013 flips to `not_applicable`, and the only
+  remaining fails are **IAC-002** (plan-before-apply) and **IAC-005** (drift-detection), which are
+  **not merge-gate BLOCK controls**. Nothing regressed.
+
+**Rule learned:** environment-dependent controls (like SEC-013) must have the environment declared in
+a **committed, CI-visible file** (`terraform.tfvars.example`), not only in the gitignored
+`terraform.tfvars` — otherwise local sims (which read the real tfvars) and CI (which cannot) will
+silently disagree, and CI is the source of truth. Re-simulate the *full* merge gate **as CI sees it
+(committed files only)** after any compliance-ref bump — a single patch release can flip a blocking
+control fail → pass (or inert → blocking), and a gitignored file can mask a real classification. When
+a blocking control is a genuine policy false-positive (SUP-001 not recognising `git:: ?ref=` pinning),
+escalate it upstream and land the fix in the governed compliance release rather than faking a status
+or filing a waiver; a well-pinned repo should pass honestly once the policy is corrected. Also verify
+the *actual* base ref on `origin/main` (here v4.0.0, not the assumed v4.0.2) so the PR states the true
+blast radius.
+
+---
+
 ## 2026-07-11 — fix: resolve policy failures + pin module sources to v1.0.0
 
 **Change Record:** CHG-20260711-049
@@ -62,3 +129,51 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 run empty and the gate fails. And AGT-012 keyword checks are literal substring matches on the
 lowercased file: never let a required safety keyword hide inside markdown emphasis (`**not**`),
 because `**` breaks the `do not` substring. Prefer plain-text phrasing for compliance keywords.
+
+---
+
+## 2026-07-11 — chore: bump platform-compliance ref v4.0.0 -> v4.0.2
+
+**Change Record:** CHG-20260711-068
+
+- **Compliance ref bump (v4.0.0 → v4.0.2)**: bumped the `platform-compliance-ref` input and the
+  cited ref in `.github/copilot-instructions.md`. The change touched only `compliance.yml` +
+  `copilot-instructions.md`, but v4.0.2 is a patch that silently **activates two previously-inert
+  BLOCK controls** on the merge gate — so the full gate was re-simulated locally before trusting it.
+- **SEC-001 became active (collector added in v4.0.2)**: v4.0.0 shipped no collector for
+  `sec-secrets.json`, so SEC-001 fell through to `not_applicable` (secret-scanning enforcement was
+  dead). v4.0.2's `collect-all-inputs.py` now emits `sec-secrets.json` (open GitHub secret-scanning
+  alert count + optional gitleaks scan), so SEC-001 evaluates a real pass/fail and **blocks**.
+- **SUP-001 became blocking (engine normalization added in v4.0.2)**: the `SUP-001-TERRAFORM`
+  policy is unchanged between v4.0.0 and v4.0.2, but v4.0.2's engine added `control_id_of()` which
+  strips the `-TF` suffix and records the terraform result under catalog id **`SUP-001`** (a merge
+  gate BLOCK control) instead of the old context-scoped `SUP-001-TF` (which was not in the block
+  set → warn). Same failing policy; a pinning failure now **blocks** instead of warning.
+- **SEC-001 triage result → PASS (no action needed)**: live `security_and_analysis` already had
+  `secret_scanning: enabled` and `secret_scanning_push_protection: enabled`; gitleaks returned 0
+  findings and there were **0 open** secret-scanning alerts. No `gh api PATCH` enablement was
+  required — the control's target gap did not exist on this repo. SEC-001 = `pass`.
+- **SUP-001 triage result → FAIL (policy false-positive, escalated, NOT waived)**: this repo is
+  genuinely well-pinned — all **7** external `git::` module sources are tag-pinned
+  (`?ref=v1.3.2 … v1.1.0`, corroborated by the collector's `modules_with_mutable_refs: []`) and all
+  provider/`required_version` constraints are bounded (`~>`). SUP-001 nonetheless **failed with 17
+  violations** because `SUP-001-TERRAFORM` evaluates the registry-style `version` argument, which is
+  empty for every `git::` and local `./` module, so it flags all 17 module calls (7 correctly
+  tag-pinned git modules + 10 in-repo local modules that can never carry a `version`). There is **no
+  valid in-repo Terraform fix** (adding `version =` to a `git::`/local module is invalid HCL and
+  would break IAC-001/validate) and it must **not** be waived — escalated to the platform-compliance
+  policy-engineer to make the policy honour `?ref=` git pinning and exempt local modules.
+- **Regression noted (independent of the bump)**: SRC-001 and SRC-002 also block, both solely on
+  `dismiss_stale_reviews: false` in `main` branch protection. The SRC policies are unchanged across
+  v4.0.0→v4.0.2, so this is a **live GitHub branch-protection state gap**, not a ref-bump regression;
+  remediation (`dismiss_stale_reviews=true`, requires `PLATFORM_ADMIN_TOKEN`) is flagged for a human
+  with admin scope rather than changed unilaterally.
+
+**Rule learned:** a compliance patch release can silently activate previously-inert BLOCK controls
+(a new collector emitting an input, or an engine change that re-classifies a warn-level result under
+a blocking catalog id) even when the repo's own diff is trivial — **always re-simulate the full
+merge gate locally after any compliance-ref bump**, never trust an upstream "expected PASS" handoff.
+Treat a newly-active security control as a genuine gap to fix (enable the setting), not waive — but
+equally, when a newly-blocking control is a policy false-positive (e.g. SUP-001 not recognising
+`git:: ?ref=` pinning), the honest fix is to escalate the policy upstream, not to fake a pass or add
+a waiver.
