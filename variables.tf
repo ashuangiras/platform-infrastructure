@@ -120,6 +120,12 @@ variable "vault_drop_capabilities" {
   default     = ["ALL"]
 }
 
+variable "vault_capabilities" {
+  description = "Vault Linux capabilities to add. Set to [] on macOS Docker Desktop (IPC_LOCK causes plan loops with kreuzwerker/docker provider)."
+  type        = list(string)
+  default     = ["IPC_LOCK"]
+}
+
 variable "vault_run_as_user" {
   description = "Vault container user. Set to empty string on macOS Docker Desktop."
   type        = string

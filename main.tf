@@ -32,6 +32,7 @@ module "secrets" {
   api_port          = var.vault_port
   environment       = var.environment
   drop_capabilities = var.vault_drop_capabilities
+  capabilities      = var.vault_capabilities
   run_as_user       = var.vault_run_as_user
   keys_path         = var.vault_keys_path
 

@@ -29,6 +29,12 @@ variable "drop_capabilities" {
   default     = ["ALL"]
 }
 
+variable "capabilities" {
+  description = "Linux capabilities to add. Set to [] on macOS Docker Desktop (IPC_LOCK causes loops)."
+  type        = list(string)
+  default     = ["IPC_LOCK"]
+}
+
 variable "run_as_user" {
   description = "Container user. Set to empty string on macOS Docker Desktop."
   type        = string

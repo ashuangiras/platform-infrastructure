@@ -9,6 +9,7 @@ module "vault" {
   # macOS Docker Desktop: drop = ["ALL"] causes CAP_SETFCAP errors;
   # explicit user conflicts with gosu. Override for local staging.
   drop_capabilities = var.drop_capabilities
+  capabilities      = var.capabilities
   run_as_user       = var.run_as_user
   keys_path         = var.keys_path
   labels = {
