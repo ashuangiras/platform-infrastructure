@@ -18,3 +18,16 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 - **AGT-013**: Created this ledger.
 
 **Rule learned:** Infrastructure repositories have the strictest version pinning requirement. A module source `?ref=main` in platform-infrastructure means the running infrastructure could change silently whenever platform-modules is updated. Always pin infrastructure to a specific tag; update the pin deliberately as part of a governed change.
+
+---
+
+## 2026-07-11 — feat: data/ + identity/ components + permanent local backend (PC-0162)
+
+**Change Record:** CHG-20260711-057
+
+- **versions.tf**: switched permanently to `backend "local"` per ADR-0014/0020 circular dependency resolution. MinIO cannot store the state of what deploys it. Added postgresql + vault providers.
+- **Module refs**: all existing components bumped from v1.0.0 → v1.1.1 (picks up macOS vault/consul compatibility fixes).
+- **secrets/ + discovery/**: added `drop_capabilities`, `run_as_user` passthrough variables so root tfvars can override module defaults for macOS staging.
+- **data/**: new component — deploys shared PostgreSQL (with authentik DB+role) and Redis (with authentik ACL user). Credentials in sensitive outputs → written to Vault by integrations/.
+- **identity/**: new component — deploys Authentik server + worker using data/ outputs as database_url + redis_url inputs. No embedded database.
+- **Rule learned**: always pass override variables through the component layer to root variables.tf. Hardcoded module defaults that work on Linux create invisible staging failures. The correct posture: production-safe defaults in modules, staging overrides via tfvars.

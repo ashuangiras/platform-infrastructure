@@ -22,3 +22,15 @@ variable "environment" {
   description = "Environment label."
   type        = string
 }
+
+variable "drop_capabilities" {
+  description = "Linux capabilities to drop. Set to [] on macOS Docker Desktop."
+  type        = list(string)
+  default     = ["ALL"]
+}
+
+variable "run_as_user" {
+  description = "Container user. Set to empty string on macOS Docker Desktop."
+  type        = string
+  default     = "100:1000"
+}

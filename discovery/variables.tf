@@ -27,3 +27,9 @@ variable "environment" {
   description = "Environment label."
   type        = string
 }
+
+variable "run_as_user" {
+  description = "Container user. Set to empty string on macOS Docker Desktop (consul uses su-exec)."
+  type        = string
+  default     = ""
+}

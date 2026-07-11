@@ -52,3 +52,20 @@ output "minio_s3_endpoint" {
   description = "MinIO S3 endpoint to put in backend.hcl as the 'endpoint' value."
   value       = module.storage.api_endpoint
 }
+
+# ── Data (PostgreSQL + Redis) ──────────────────────────────────────────────────
+output "postgresql_host" {
+  description = "PostgreSQL container hostname on the Docker network."
+  value       = module.data.postgresql_host
+}
+
+# ── Identity (Authentik) ──────────────────────────────────────────────────────
+output "authentik_http_url" {
+  description = "Authentik HTTP URL from the host. Default: http://localhost:9000"
+  value       = module.identity.authentik_http_url
+}
+
+output "authentik_issuer_url" {
+  description = "Authentik OIDC issuer URL — configure in Vault JWT auth and Grafana OAuth2."
+  value       = module.identity.authentik_issuer_url
+}

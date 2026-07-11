@@ -1,5 +1,5 @@
 module "minio" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/storage/minio?ref=v1.0.0"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/storage/minio?ref=v1.1.1"
 
   container_name = "platform-minio"
   data_path      = var.data_path
