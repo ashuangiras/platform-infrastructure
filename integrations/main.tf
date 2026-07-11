@@ -108,30 +108,21 @@ resource "vault_kv_secret_v2" "authentik_secret_key" {
 # 3. Authentik — groups, users, OIDC providers, applications
 # ---------------------------------------------------------------------------
 
-# ── Groups ───────────────────────────────────────────────────────────────────
+# ── Groups (for_each over a locals map — add new groups here) ────────────────
 
-resource "authentik_group" "platform_admins" {
-  name         = "platform-admins"
-  is_superuser = true
-
+locals {
+  authentik_groups = {
+    platform-admins = { is_superuser = true }
+    platform-users  = { is_superuser = false }
+    vault-users     = { is_superuser = false }
+    minio-users     = { is_superuser = false }
+  }
 }
 
-resource "authentik_group" "platform_users" {
-  name         = "platform-users"
-  is_superuser = false
-
-}
-
-resource "authentik_group" "vault_users" {
-  name         = "vault-users"
-  is_superuser = false
-
-}
-
-resource "authentik_group" "minio_users" {
-  name         = "minio-users"
-  is_superuser = false
-
+resource "authentik_group" "groups" {
+  for_each     = local.authentik_groups
+  name         = each.key
+  is_superuser = each.value.is_superuser
 }
 
 # ── Platform service account ─────────────────────────────────────────────────
@@ -142,8 +133,7 @@ resource "authentik_user" "platform_svc" {
   name     = "Platform Service Account"
   email    = "platform-svc@platform.local"
   type     = "service_account"
-  groups   = [authentik_group.platform_admins.id]
-
+  groups   = [authentik_group.groups["platform-admins"].id]
 }
 
 # Write Authentik bootstrap token + platform-svc info to Vault
@@ -171,87 +161,66 @@ data "authentik_flow" "default_invalidation" {
 
 }
 
-# ── OIDC scope mappings (openid, email, profile) ─────────────────────────────
+# ── OIDC scope mappings shared by all applications ──────────────────────────
+
+# ── OIDC scope mappings shared by all applications ──────────────────────────────────────────
 
 data "authentik_property_mapping_provider_scope" "openid" {
   managed = "goauthentik.io/providers/oauth2/scope-openid"
-
 }
 
 data "authentik_property_mapping_provider_scope" "email" {
   managed = "goauthentik.io/providers/oauth2/scope-email"
-
 }
 
 data "authentik_property_mapping_provider_scope" "profile" {
   managed = "goauthentik.io/providers/oauth2/scope-profile"
-
 }
 
-# ── OIDC application: Vault ──────────────────────────────────────────────────
+locals {
+  common_scope_mappings = [
+    data.authentik_property_mapping_provider_scope.openid.id,
+    data.authentik_property_mapping_provider_scope.email.id,
+    data.authentik_property_mapping_provider_scope.profile.id,
+  ]
+}
 
-resource "authentik_provider_oauth2" "vault" {
-  name               = "vault"
-  client_id          = "vault"
-  authorization_flow = data.authentik_flow.default_authorization.id
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
+# ── OIDC applications (local module — one call per service) ──────────────────
+
+module "oidc_vault" {
+  source = "./modules/oidc-application"
+
+  name        = "Vault"
+  slug        = "vault"
+  description = "HashiCorp Vault secret management"
+  meta_icon   = "https://www.vaultproject.io/favicon.ico"
 
   allowed_redirect_uris = [
     { matching_mode = "strict", url = "${var.vault_addr}/ui/vault/auth/oidc/oidc/callback" },
     { matching_mode = "strict", url = "${var.vault_addr}/oidc/callback" },
   ]
 
-  access_code_validity  = "minutes=1"
-  access_token_validity = "hours=1"
-
-  property_mappings = [
-    data.authentik_property_mapping_provider_scope.openid.id,
-    data.authentik_property_mapping_provider_scope.email.id,
-    data.authentik_property_mapping_provider_scope.profile.id,
-  ]
+  authorization_flow_id = data.authentik_flow.default_authorization.id
+  invalidation_flow_id  = data.authentik_flow.default_invalidation.id
+  property_mapping_ids  = local.common_scope_mappings
 }
 
-resource "authentik_application" "vault" {
-  name              = "Vault"
-  slug              = "vault"
-  protocol_provider = authentik_provider_oauth2.vault.id
-  meta_icon         = "https://www.vaultproject.io/favicon.ico"
-  meta_description  = "HashiCorp Vault secret management"
+module "oidc_minio" {
+  source = "./modules/oidc-application"
 
-  policy_engine_mode = "any"
-}
-
-# ── OIDC application: MinIO ──────────────────────────────────────────────────
-
-resource "authentik_provider_oauth2" "minio" {
-  name               = "minio"
-  client_id          = "minio"
-  authorization_flow = data.authentik_flow.default_authorization.id
-  invalidation_flow  = data.authentik_flow.default_invalidation.id
+  name        = "MinIO"
+  slug        = "minio"
+  description = "MinIO object storage"
+  meta_icon   = "https://min.io/favicon.ico"
 
   allowed_redirect_uris = [
     { matching_mode = "regex", url = "http://localhost:9001/oauth_callback" },
     { matching_mode = "regex", url = "http://localhost:9000/oauth_callback" },
   ]
 
-  access_code_validity  = "minutes=1"
-  access_token_validity = "hours=1"
-
-  property_mappings = [
-    data.authentik_property_mapping_provider_scope.openid.id,
-    data.authentik_property_mapping_provider_scope.email.id,
-    data.authentik_property_mapping_provider_scope.profile.id,
-  ]
-}
-
-resource "authentik_application" "minio" {
-  name              = "MinIO"
-  slug              = "minio"
-  protocol_provider = authentik_provider_oauth2.minio.id
-  meta_icon         = "https://min.io/favicon.ico"
-  meta_description  = "MinIO object storage"
-
-  policy_engine_mode = "any"
+  authorization_flow_id = data.authentik_flow.default_authorization.id
+  invalidation_flow_id  = data.authentik_flow.default_invalidation.id
+  property_mapping_ids  = local.common_scope_mappings
 }
 
 # Write OIDC client secrets to Vault
@@ -260,8 +229,8 @@ resource "vault_kv_secret_v2" "oidc_vault" {
   name  = "platform/oidc/vault"
 
   data_json = jsonencode({
-    client_id     = authentik_provider_oauth2.vault.client_id
-    client_secret = authentik_provider_oauth2.vault.client_secret
+    client_id     = module.oidc_vault.client_id
+    client_secret = module.oidc_vault.client_secret
     issuer_url    = "${var.authentik_internal_url}/application/o/vault/"
   })
 }
@@ -271,8 +240,8 @@ resource "vault_kv_secret_v2" "oidc_minio" {
   name  = "platform/oidc/minio"
 
   data_json = jsonencode({
-    client_id     = authentik_provider_oauth2.minio.client_id
-    client_secret = authentik_provider_oauth2.minio.client_secret
+    client_id     = module.oidc_minio.client_id
+    client_secret = module.oidc_minio.client_secret
     issuer_url    = "${var.authentik_internal_url}/application/o/minio/"
   })
 }
@@ -322,8 +291,8 @@ resource "vault_jwt_auth_backend" "authentik" {
   type               = "oidc"
   description        = "Authentik OIDC/JWT authentication"
   oidc_discovery_url = "${var.authentik_internal_url}/application/o/vault/"
-  oidc_client_id     = authentik_provider_oauth2.vault.client_id
-  oidc_client_secret = authentik_provider_oauth2.vault.client_secret
+  oidc_client_id     = module.oidc_vault.client_id
+  oidc_client_secret = module.oidc_vault.client_secret
 
   tune {
     listing_visibility = "unauth"
@@ -384,9 +353,9 @@ resource "vault_identity_group_alias" "platform_admins" {
 # ---------------------------------------------------------------------------
 
 resource "null_resource" "minio_oidc" {
+  # Use sha256 of client_id+secret as trigger so output isn't suppressed by sensitive value
   triggers = {
-    client_id     = authentik_provider_oauth2.minio.client_id
-    client_secret = authentik_provider_oauth2.minio.client_secret
+    config_hash   = sha256("${module.oidc_minio.client_id}:${module.oidc_minio.client_secret}")
     authentik_url = var.authentik_internal_url
   }
 
@@ -395,28 +364,41 @@ resource "null_resource" "minio_oidc" {
       set -euo pipefail
       echo "[integrations] Configuring MinIO OIDC..."
 
-      # Register MinIO alias
       mc alias set platform "${var.minio_endpoint}" \
         "${var.minio_root_user}" "${var.minio_root_password}" --insecure
 
-      # Remove existing OIDC config if present (idempotent)
-      mc idp openid remove platform authentik --insecure 2>/dev/null || true
+      # Check if config already exists (list returns JSON array)
+      EXISTS=$(mc idp openid list platform --json --insecure 2>/dev/null \
+        | jq '[.[] | select(.name == "authentik")] | length > 0' 2>/dev/null || echo "false")
 
-      # Add Authentik OIDC provider using the internal Docker network URL
-      mc idp openid add platform authentik \
-        config_url="${var.authentik_internal_url}/application/o/minio/.well-known/openid-configuration" \
-        client_id="${authentik_provider_oauth2.minio.client_id}" \
-        client_secret="${authentik_provider_oauth2.minio.client_secret}" \
-        scopes="openid,email,profile" \
-        redirect_uri="http://localhost:9001/oauth_callback" \
-        display_name="Authentik" \
-        role_policy="consoleAdmin" --insecure
+      if [ "$EXISTS" = "true" ]; then
+        echo "[integrations] Updating existing MinIO OIDC config..."
+        mc idp openid update platform authentik \
+          "config_url=${var.authentik_internal_url}/application/o/minio/.well-known/openid-configuration" \
+          "client_id=${module.oidc_minio.client_id}" \
+          "client_secret=${module.oidc_minio.client_secret}" \
+          scopes=openid,email,profile \
+          redirect_uri=http://localhost:9001/oauth_callback \
+          display_name=Authentik \
+          role_policy=consoleAdmin \
+          --insecure
+      else
+        echo "[integrations] Adding MinIO OIDC config..."
+        mc idp openid add platform authentik \
+          "config_url=${var.authentik_internal_url}/application/o/minio/.well-known/openid-configuration" \
+          "client_id=${module.oidc_minio.client_id}" \
+          "client_secret=${module.oidc_minio.client_secret}" \
+          scopes=openid,email,profile \
+          redirect_uri=http://localhost:9001/oauth_callback \
+          display_name=Authentik \
+          role_policy=consoleAdmin \
+          --insecure
+      fi
 
-      # Restart MinIO to pick up new OIDC config
       mc admin service restart platform --insecure
       echo "[integrations] MinIO OIDC configured."
     SHELL
   }
 
-  depends_on = [authentik_application.minio, vault_mount.kv]
+  depends_on = [module.oidc_minio, vault_mount.kv]
 }

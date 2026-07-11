@@ -15,12 +15,12 @@ output "vault_oidc_accessor" {
 
 output "authentik_vault_client_id" {
   description = "Authentik OIDC client ID for Vault."
-  value       = authentik_provider_oauth2.vault.client_id
+  value       = module.oidc_vault.client_id
 }
 
 output "authentik_minio_client_id" {
   description = "Authentik OIDC client ID for MinIO."
-  value       = authentik_provider_oauth2.minio.client_id
+  value       = module.oidc_minio.client_id
 }
 
 output "vault_secrets_path" {
@@ -30,5 +30,5 @@ output "vault_secrets_path" {
 
 output "platform_admins_group_id" {
   description = "Authentik platform-admins group ID."
-  value       = authentik_group.platform_admins.id
+  value       = authentik_group.groups["platform-admins"].id
 }
