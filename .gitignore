@@ -24,3 +24,7 @@ backend-minio.hcl
 .DS_Store
 .idea/
 *.swp
+terraform.tfstate.staging
+terraform.tfstate.staging.backup
+tfplan
+*.bak
