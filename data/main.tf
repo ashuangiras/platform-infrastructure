@@ -29,9 +29,13 @@ module "redis" {
 
   acl_users = {
     authentik = {
-      password   = var.redis_authentik_password
-      commands   = "+@all"
-      key_prefix = "authentik:*"
+      password = var.redis_authentik_password
+      commands = "+@all"
+      # key_prefix = "" means ~* (all keys). Celery (used by Authentik worker) writes
+      # arbitrary key names (unacked_mutex, celery*, _kombu* etc.) that don't match
+      # a service-specific prefix. Authentication via username+password is the security
+      # boundary; key prefix restriction is overly narrow here.
+      key_prefix = ""
     }
   }
 
