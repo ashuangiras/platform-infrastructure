@@ -1,6 +1,6 @@
 ---
 description: "Use when the compliance gate is failing on platform-infrastructure, or when interpreting an assessment report. Knows PROF-TERRAFORM-ROOT-V1's merge and deployment gate controls. Handles IAC-002 (plan-before-apply), state backend compliance, and waiver requests. Does NOT write Terraform or manage PRs."
-name: "Compliance Gate"
+name: "Infra Compliance Gate"
 tools: [read, edit, search, execute, todo]
 user-invocable: true
 ---

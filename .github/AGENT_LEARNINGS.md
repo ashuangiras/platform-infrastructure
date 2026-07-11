@@ -31,3 +31,34 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 - **data/**: new component — deploys shared PostgreSQL (with authentik DB+role) and Redis (with authentik ACL user). Credentials in sensitive outputs → written to Vault by integrations/.
 - **identity/**: new component — deploys Authentik server + worker using data/ outputs as database_url + redis_url inputs. No embedded database.
 - **Rule learned**: always pass override variables through the component layer to root variables.tf. Hardcoded module defaults that work on Linux create invisible staging failures. The correct posture: production-safe defaults in modules, staging overrides via tfvars.
+
+---
+
+## 2026-07-11 — chore: migrate to platform-compliance v4.0.0 and enable agent governance
+
+**Change Record:** CHG-20260711-067
+
+- **Compliance ref bump (v3.3.3 → v4.0.0)**: bumped both `uses: …/reusable-compliance.yml@vX`
+  and the `platform-compliance-ref` input in `.github/workflows/compliance.yml`, and updated the
+  ref cited in `.github/copilot-instructions.md`.
+- **AGT-001..015 now actually run**: the manifest declares the `agent` technology context, which
+  puts the 15 AGT controls **in scope**. The reusable workflow, however, only evaluates policies
+  for the contexts passed via the `technology-contexts` **input**. Those two were out of sync —
+  the manifest listed `agent` but the workflow input did not — so the AGT controls were in-scope
+  yet produced **no results**, which the merge gate treats as a failure. Fix: add `agent` to the
+  workflow `technology-contexts` input so it matches the manifest and the controls produce results.
+- **AGT-012 safety coverage was silently broken**: the root instruction file's only "safety"
+  keyword lived inside markdown bold — `Do **not** …`. The collector lowercases the file and does a
+  plain substring match for `do not`, and `do **not**` does not contain the literal substring
+  `do not`. So `has_safety` was `False` and `instructions.complete` was `False`. Fix: added a real
+  `## Safety` section using the literal phrase `do not` (unbolded) plus `destructive`,
+  `irreversible`, and `secret`.
+- **Instruction file hardened**: added `## Build, test & validation` (terraform fmt/validate/tfsec/
+  semgrep/plan) and `## Repository conventions & structure` (repository map + composition patterns)
+  so all three AGT-012 dimensions (build/test, conventions, safety) genuinely pass.
+
+**Rule learned:** a technology context has to be enabled in **two** places — the manifest
+(`technology_contexts`) *and* the workflow `technology-contexts` input — or the in-scope controls
+run empty and the gate fails. And AGT-012 keyword checks are literal substring matches on the
+lowercased file: never let a required safety keyword hide inside markdown emphasis (`**not**`),
+because `**` breaks the `do not` substring. Prefer plain-text phrasing for compliance keywords.
