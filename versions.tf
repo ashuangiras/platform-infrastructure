@@ -6,18 +6,29 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "~> 3.0"
     }
+    postgresql = {
+      source  = "cyrilgdn/postgresql"
+      version = "~> 1.22"
+    }
+    vault = {
+      source  = "hashicorp/vault"
+      version = "~> 4.0"
+    }
   }
 
-  # S3-compatible backend pointing at the self-hosted MinIO instance.
-  # Values are supplied at init time via backend.hcl (never committed — in .gitignore).
+  # platform-infrastructure uses a local state backend (ADR-0014 + ADR-0020).
   #
-  # Bootstrap procedure (one time):
-  #   1. On first deploy, run: terraform init -backend-config=backend.hcl
-  #   2. Copy backend.hcl.example to backend.hcl and fill in MinIO credentials
-  #   3. If migrating from a previous local state: terraform init -migrate-state -backend-config=backend.hcl
+  # WHY LOCAL — not MinIO:
+  #   This configuration deploys MinIO. Storing the state of what deploys MinIO
+  #   inside MinIO itself creates a circular dependency: you can't init the backend
+  #   before MinIO exists, and you can't destroy MinIO without losing the state.
+  #   The local backend breaks the cycle. State is on the operator's machine only.
   #
-  # See README.md → "State backend" for full instructions (ADR-0014).
-  backend "s3" {}
+  # platform-services uses MinIO (S3 backend) — that's safe because MinIO is
+  # already running before platform-services is ever applied.
+  backend "local" {
+    path = "terraform.tfstate"
+  }
 }
 
 provider "docker" {
