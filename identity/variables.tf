@@ -74,3 +74,27 @@ variable "run_as_user" {
   type        = string
   default     = ""
 }
+
+variable "tls_enabled" {
+  description = "When true, the Authentik server serves HTTPS and mounts the provided cert/key/CA."
+  type        = bool
+  default     = false
+}
+
+variable "tls_cert_path" {
+  description = "Host path to the Authentik server certificate (PEM). Mounted at /certs/tls.crt."
+  type        = string
+  default     = ""
+}
+
+variable "tls_key_path" {
+  description = "Host path to the Authentik server private key (PEM). Mounted at /certs/tls.key."
+  type        = string
+  default     = ""
+}
+
+variable "tls_ca_path" {
+  description = "Host path to the CA certificate (PEM). Mounted at /certs/ca.crt when set."
+  type        = string
+  default     = ""
+}

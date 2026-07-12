@@ -1,5 +1,5 @@
 module "authentik" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/identity/authentik?ref=v1.3.2"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/identity/authentik?ref=v1.6.0"
 
   container_name_prefix    = "platform-authentik"
   network_name             = var.network_name
@@ -20,6 +20,11 @@ module "authentik" {
   https_port               = var.https_port
   run_as_user              = var.run_as_user
   error_reporting_enabled  = false
+
+  tls_enabled   = var.tls_enabled
+  tls_cert_path = var.tls_cert_path
+  tls_key_path  = var.tls_key_path
+  tls_ca_path   = var.tls_ca_path
 
   labels = {
     "platform.env"       = var.environment

@@ -34,3 +34,27 @@ variable "environment" {
   description = "Environment label."
   type        = string
 }
+
+variable "tls_enabled" {
+  description = "When true, MinIO serves HTTPS and mounts the provided cert/key/CA."
+  type        = bool
+  default     = false
+}
+
+variable "tls_cert_path" {
+  description = "Host path to the MinIO server certificate (PEM). Mounted at /certs/public.crt."
+  type        = string
+  default     = ""
+}
+
+variable "tls_key_path" {
+  description = "Host path to the MinIO server private key (PEM). Mounted at /certs/private.key."
+  type        = string
+  default     = ""
+}
+
+variable "tls_ca_path" {
+  description = "Host path to the CA certificate (PEM). Mounted at /certs/CAs/ca.crt when set."
+  type        = string
+  default     = ""
+}

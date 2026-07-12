@@ -4,6 +4,56 @@ This ledger records meaningful updates to the agent configuration in `platform-i
 
 ---
 
+## 2026-07-12 — feat: P0 security tier (compliance v4.1.0, modules v1.6.0)
+
+**Change Record:** CHG-20260712-002
+
+- **Compliance ref bump v4.0.3 → v4.1.0 — blast radius re-simulated as CI sees it:** the P0
+  security tier lands on the governed **v4.1.0** compliance release. The diff touches only
+  `.github/workflows/compliance.yml` (header comment, reusable-workflow `uses:` ref, and
+  `platform-compliance-ref:` — 3 spots) and the `.github/copilot-instructions.md` header pin. As
+  learned in CHG-20260712-001, a single compliance-ref bump can flip a blocking control, so the
+  **full merge gate was re-simulated locally against v4.1.0 using committed files only** (the way CI
+  sees the repo) before trusting it. Result: genuine green — all BLOCK controls resolve on real
+  evidence (SRC-001/002, SEC-001/002/012/013/014, IAC-001/003b/004/006/007, SUP-001, NET-002,
+  RUN-008/009/009b, CAT-003, AGT-001..015). IAC-002 (plan-before-apply) is **not** in the
+  `merge_gate` profile, and CHG-001 resolves `not_applicable` for this repo's merge gate.
+- **All module wrappers pinned to `git::…?ref=v1.6.0`:** every `git::` source across the 8 Terraform
+  dirs now pins the immutable **v1.6.0** module tag (SUP-001 honours `?ref=<semver-tag>` pinning and
+  exempts in-repo local modules). `terraform validate` PASSES in all 8 dirs against the real tagged
+  v1.6.0 modules; `terraform fmt -recursive` is clean.
+- **v1.6.0 postgres/redis `bind_address` de-parameterization — infra needed ZERO change:** v1.6.0
+  removed the `bind_address` input variable from the postgres/redis modules (the modules now bind
+  localhost internally). This repo's wrappers **never forwarded a `bind_address` argument** (zero
+  references — verified by grep before and after), so the de-parameterization is a **no-op** for the
+  infra layer: no wrapper edits, no variable churn, and `terraform validate` PASSES against the real
+  tagged v1.6.0 modules with no missing/extra-argument errors. The alignment was confirmed by
+  validating against the actual v1.6.0 tag, not a local override.
+- **SEC-013 stays `not_applicable` via the committed `environment: staging` label:** P0-7 de-masking
+  reads the **committed** `.compliance-manifest.yaml` (`environment: staging`) — CI classifies the
+  environment from committed files, not the gitignored `terraform.tfvars`. Combined with the
+  CHG-20260712-001 fix to `terraform.tfvars.example` (`production` → `staging`), CI and local sims
+  agree: SEC-013 = `not_applicable` (governed HIGH-001/ADR-0021 TLS deferral for the macOS staging
+  host). This is **NOT a waiver** and **NOT a real production TLS gap**.
+- **Staging-validated live deploy (this is a code push only — stack already converged):** the P0
+  tier was validated on the live macOS staging host — **7/7 containers healthy**, TLS end-to-end
+  between services, all published ports bound to `127.0.0.1` (localhost-only, not `0.0.0.0`), secrets
+  rotated out of any committed surface, and `terraform plan` reports **No changes** (converged, zero
+  drift). No `terraform apply`/`plan-with-backend`/`destroy` was run for the merge — infra is
+  unversioned and this PR ships the reviewed code only.
+
+**Rule learned:** when an upstream module release *removes* an input variable (here v1.6.0 dropping
+postgres/redis `bind_address`), do not assume the consuming layer needs a matching edit — **grep the
+wrappers for the argument first**, then prove the no-op by running `terraform validate` against the
+*real tagged module* (not a `module_override.tf` pointing at a local checkout), because an override
+can hide an argument-count mismatch that CI would catch. And keep the environment-dependent controls
+(SEC-013) anchored to a **committed, CI-visible** signal — here the `.compliance-manifest.yaml`
+`environment: staging` label plus the corrected `terraform.tfvars.example` — so P0-7 de-masking and
+local sims classify the repo identically. Re-simulate the *full* merge gate as CI sees it (committed
+files only) after every compliance-ref bump.
+
+---
+
 ## 2026-07-12 — chore: bump platform-compliance ref v4.0.0 -> v4.0.3
 
 **Change Record:** CHG-20260712-001

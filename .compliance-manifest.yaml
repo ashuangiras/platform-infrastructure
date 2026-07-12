@@ -1,5 +1,10 @@
 schema_version: "1.0.0"
 
+# Canonical deployment target is the macOS local staging host (PC-0139).
+# SEC-013 (TLS-required) resolves not_applicable for staging; TLS is nonetheless
+# enabled by default here (P0-1). Flip to production only after promotion.
+environment: staging
+
 repository:
   name: platform-infrastructure
   url: "https://github.com/ashuangiras/platform-infrastructure"

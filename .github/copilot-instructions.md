@@ -3,7 +3,7 @@
 `platform-infrastructure` is a governed repository. All compliance rules come from the mother repo:
 
 > **[platform-compliance](https://github.com//platform-compliance)**  
-> Profile: **`PROF-TERRAFORM-ROOT-V1`** | Compliance ref: **`v4.0.3`**  
+> Profile: **`PROF-TERRAFORM-ROOT-V1`** | Compliance ref: **`v4.1.0`**  
 > Profile definition: [04-profiles/PROF-TERRAFORM-ROOT-V1.yaml](https://github.com//platform-compliance/blob/main/04-profiles/PROF-TERRAFORM-ROOT-V1.yaml)
 
 This is the single source of agent guidance for the repo. Do not add a second root instruction

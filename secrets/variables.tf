@@ -52,3 +52,27 @@ variable "logs_path" {
   type        = string
   default     = ""
 }
+
+variable "tls_enabled" {
+  description = "When true, Vault serves HTTPS and mounts the provided cert/key/CA."
+  type        = bool
+  default     = false
+}
+
+variable "tls_cert_path" {
+  description = "Host path to the Vault server certificate (PEM). Mounted at /vault/tls/tls.crt."
+  type        = string
+  default     = ""
+}
+
+variable "tls_key_path" {
+  description = "Host path to the Vault server private key (PEM). Mounted at /vault/tls/tls.key."
+  type        = string
+  default     = ""
+}
+
+variable "tls_ca_path" {
+  description = "Host path to the CA certificate (PEM). Mounted at /vault/tls/ca.crt when set."
+  type        = string
+  default     = ""
+}

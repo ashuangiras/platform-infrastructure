@@ -52,6 +52,11 @@ variable "minio_root_user" {
   description = "MinIO root (admin) username. Set via TF_VAR_minio_root_user or a tfvars file."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.minio_root_user))
+    error_message = "minio_root_user looks like a placeholder — set a real username before applying."
+  }
 }
 
 variable "minio_root_password" {
@@ -60,8 +65,13 @@ variable "minio_root_password" {
   sensitive   = true
 
   validation {
-    condition     = length(var.minio_root_password) >= 8
-    error_message = "minio_root_password must be at least 8 characters."
+    condition     = length(var.minio_root_password) >= 20
+    error_message = "minio_root_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.minio_root_password))
+    error_message = "minio_root_password looks like a placeholder — generate a real secret (openssl rand -base64 24) before applying."
   }
 }
 
@@ -110,6 +120,22 @@ variable "environment" {
   }
 }
 
+# ── TLS (localhost hardening) ─────────────────────────────────────────────────
+# ONE-LINE ROLLBACK: set tls_enabled = false to restore the previous plaintext
+# behavior exactly — plaintext listeners, http:// provider addresses, and
+# skip_tls_verify/insecure = true on the vault + authentik providers.
+variable "tls_enabled" {
+  description = "Master switch for platform TLS. When true (default) a local self-signed CA issues per-service certs, containers serve HTTPS, and the vault/authentik providers verify against that CA. Set to false for a one-line rollback to the previous plaintext behavior."
+  type        = bool
+  default     = true
+}
+
+variable "tls_material_path" {
+  description = "Host directory where the generated CA + per-service TLS material is written. When empty it is derived as <dirname(dirname(vault_config_path))>/tls (default: /srv/platform/tls). Private keys are written here with mode 0600 and MUST live OUTSIDE the repo tree."
+  type        = string
+  default     = ""
+}
+
 # ── macOS Docker Desktop compatibility ────────────────────────────────────────
 # These override the module defaults for local staging on macOS.
 # Leave unset (or default) for production Linux hosts.
@@ -155,12 +181,32 @@ variable "pg_superuser_password" {
   description = "PostgreSQL superuser password. Written to Vault by integrations/."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.pg_superuser_password) >= 20
+    error_message = "pg_superuser_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.pg_superuser_password))
+    error_message = "pg_superuser_password looks like a placeholder — generate a real secret before applying."
+  }
 }
 
 variable "pg_authentik_password" {
   description = "PostgreSQL password for the authentik database role. Written to Vault."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.pg_authentik_password) >= 20
+    error_message = "pg_authentik_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.pg_authentik_password))
+    error_message = "pg_authentik_password looks like a placeholder — generate a real secret before applying."
+  }
 }
 
 variable "redis_data_path" {
@@ -179,12 +225,32 @@ variable "redis_admin_password" {
   description = "Redis admin ACL user password. Written to Vault."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.redis_admin_password) >= 20
+    error_message = "redis_admin_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.redis_admin_password))
+    error_message = "redis_admin_password looks like a placeholder — generate a real secret before applying."
+  }
 }
 
 variable "redis_authentik_password" {
   description = "Redis ACL password for the authentik user. Written to Vault."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.redis_authentik_password) >= 20
+    error_message = "redis_authentik_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.redis_authentik_password))
+    error_message = "redis_authentik_password looks like a placeholder — generate a real secret before applying."
+  }
 }
 
 variable "data_run_as_user" {
@@ -198,12 +264,32 @@ variable "authentik_secret_key" {
   description = "Authentik SECRET_KEY (Django signing key, 50+ random chars). Written to Vault."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.authentik_secret_key) >= 50
+    error_message = "authentik_secret_key must be at least 50 characters — generate with: openssl rand -base64 50."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.authentik_secret_key))
+    error_message = "authentik_secret_key looks like a placeholder — generate a real secret (openssl rand -base64 50) before applying."
+  }
 }
 
 variable "authentik_admin_password" {
   description = "Authentik bootstrap admin password. Written to Vault."
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.authentik_admin_password) >= 20
+    error_message = "authentik_admin_password must be at least 20 characters — generate with: openssl rand -base64 24."
+  }
+
+  validation {
+    condition     = !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.authentik_admin_password))
+    error_message = "authentik_admin_password looks like a placeholder — generate a real secret before applying."
+  }
 }
 
 variable "authentik_admin_email" {
@@ -217,6 +303,16 @@ variable "authentik_bootstrap_token" {
   type        = string
   sensitive   = true
   default     = ""
+
+  validation {
+    condition     = var.authentik_bootstrap_token == "" || length(var.authentik_bootstrap_token) >= 32
+    error_message = "authentik_bootstrap_token, when set, must be at least 32 characters — generate with: openssl rand -hex 32."
+  }
+
+  validation {
+    condition     = var.authentik_bootstrap_token == "" || !can(regex("(?i)(please-change|replace_me|change-me|staging-)", var.authentik_bootstrap_token))
+    error_message = "authentik_bootstrap_token looks like a placeholder — generate a real token (openssl rand -hex 32) before applying."
+  }
 }
 
 variable "authentik_http_port" {
