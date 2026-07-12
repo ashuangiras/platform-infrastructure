@@ -21,6 +21,7 @@ locals {
 
     # ── Discovery ────────────────────────────────────────────────────────────
     8500 = "consul-http"
+    8501 = "consul-https" # exposed by the consul module when tls_enabled = true
     8600 = "consul-dns-udp"
 
     # ── Data (internal — not bound to host, listed for visibility) ───────────

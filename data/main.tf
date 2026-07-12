@@ -1,5 +1,5 @@
 module "postgresql" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/data/postgresql?ref=v1.1.2"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/data/postgresql?ref=v1.6.0"
 
   container_name     = "platform-postgresql"
   data_path          = var.pg_data_path
@@ -18,7 +18,7 @@ module "postgresql" {
 }
 
 module "redis" {
-  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/data/redis?ref=v1.1.0"
+  source = "git::https://github.com/ashuangiras/platform-modules.git//modules/data/redis?ref=v1.6.0"
 
   container_name = "platform-redis"
   data_path      = var.redis_data_path

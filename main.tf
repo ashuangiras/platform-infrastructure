@@ -20,7 +20,20 @@ module "storage" {
   root_password = var.minio_root_password
   environment   = var.environment
 
-  depends_on = [module.networking]
+  tls_enabled   = var.tls_enabled
+  tls_cert_path = local.minio_tls_cert
+  tls_key_path  = local.minio_tls_key
+  tls_ca_path   = local.tls_ca_cert
+
+  # Explicit depends_on: referencing local.* paths does NOT create a dependency,
+  # so the cert files must be declared here to exist on disk before the container.
+  depends_on = [
+    module.networking,
+    local_file.ca_cert,
+    local_sensitive_file.ca_key,
+    local_file.service_cert,
+    local_sensitive_file.service_key,
+  ]
 }
 
 module "secrets" {
@@ -37,7 +50,18 @@ module "secrets" {
   keys_path         = var.vault_keys_path
   logs_path         = var.vault_logs_path
 
-  depends_on = [module.networking]
+  tls_enabled   = var.tls_enabled
+  tls_cert_path = local.vault_tls_cert
+  tls_key_path  = local.vault_tls_key
+  tls_ca_path   = local.tls_ca_cert
+
+  depends_on = [
+    module.networking,
+    local_file.ca_cert,
+    local_sensitive_file.ca_key,
+    local_file.service_cert,
+    local_sensitive_file.service_key,
+  ]
 }
 
 module "discovery" {
@@ -51,7 +75,18 @@ module "discovery" {
   environment  = var.environment
   run_as_user  = var.consul_run_as_user
 
-  depends_on = [module.networking]
+  tls_enabled   = var.tls_enabled
+  tls_cert_path = local.consul_tls_cert
+  tls_key_path  = local.consul_tls_key
+  tls_ca_path   = local.tls_ca_cert
+
+  depends_on = [
+    module.networking,
+    local_file.ca_cert,
+    local_sensitive_file.ca_key,
+    local_file.service_cert,
+    local_sensitive_file.service_key,
+  ]
 }
 
 module "data" {
@@ -90,6 +125,18 @@ module "identity" {
   https_port               = var.authentik_https_port
   environment              = var.environment
   run_as_user              = var.data_run_as_user
+
+  tls_enabled   = var.tls_enabled
+  tls_cert_path = local.authentik_tls_cert
+  tls_key_path  = local.authentik_tls_key
+  tls_ca_path   = local.tls_ca_cert
+
+  depends_on = [
+    local_file.ca_cert,
+    local_sensitive_file.ca_key,
+    local_file.service_cert,
+    local_sensitive_file.service_key,
+  ]
 }
 
 # ---------------------------------------------------------------------------

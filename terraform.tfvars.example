@@ -2,13 +2,29 @@
 # Copy to terraform.tfvars and fill in real values.
 # NEVER commit terraform.tfvars — it is excluded by .gitignore.
 # Pass sensitive values via TF_VAR_* environment variables in CI.
+#
+# ⚠ ALL secrets below are OBVIOUSLY-FAKE sentinels. Do NOT apply as-is:
+#   - `terraform apply` will REJECT them (variable validation blocks).
+#   - deploy.sh guard_secrets() will REJECT them before any plan/apply.
+# Generate real values with a CSPRNG and paste them in — do NOT reuse these.
 
-# MinIO credentials — store in Vault after first deploy
+# ── MinIO credentials — store in Vault after first deploy ─────────────────────
 minio_root_user     = "platform-admin"
-minio_root_password = "change-me-min-8-chars"
+minio_root_password = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
+
+# ── Identity (Authentik) secrets ──────────────────────────────────────────────
+authentik_secret_key      = "REPLACE_ME__run: openssl rand -base64 50" # >= 50 chars
+authentik_admin_password  = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
+authentik_bootstrap_token = "REPLACE_ME__run: openssl rand -hex 32"    # >= 32 chars
+
+# ── Data (PostgreSQL + Redis) secrets ─────────────────────────────────────────
+pg_superuser_password    = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
+pg_authentik_password    = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
+redis_admin_password     = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
+redis_authentik_password = "REPLACE_ME__run: openssl rand -base64 24" # >= 20 chars
 
 # Host paths (create directories with correct ownership before terraform apply)
-# sudo mkdir -p /srv/platform/{minio/data,vault/{data,config},consul/{data,config}}
+# sudo mkdir -p /srv/platform/{minio/data,vault/{data,config},consul/{data,config},tls}
 # sudo chown -R 1000:1000 /srv/platform/minio/data
 # sudo chown -R 100:1000  /srv/platform/vault/data /srv/platform/vault/config
 # sudo chown -R 100:1000  /srv/platform/consul/data /srv/platform/consul/config
@@ -18,8 +34,15 @@ vault_config_path  = "/srv/platform/vault/config"
 consul_data_path   = "/srv/platform/consul/data"
 consul_config_path = "/srv/platform/consul/config"
 
+# ── TLS (localhost hardening) ─────────────────────────────────────────────────
+# tls_enabled defaults to true. Set to false for a one-line rollback to plaintext.
+# tls_material_path defaults to /srv/platform/tls (derived) — keys are written
+# there with mode 0600 and MUST stay outside the repo.
+# tls_enabled       = true
+# tls_material_path = "/srv/platform/tls"
+
 # Environment label — this repo's canonical deployment is the macOS local *staging*
-# host (PC-0139). TLS verification on the vault/authentik providers is intentionally
-# deferred here and tracked as HIGH-001 (ADR-0021): resolve/enable TLS before any
-# production promotion, at which point this flips to "production".
+# host (PC-0139). TLS is now enabled by default (P0-1). Keep "staging" until TLS is
+# validated end-to-end and the stack is promoted, at which point this flips to
+# "production".
 environment = "staging"

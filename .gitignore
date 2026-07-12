@@ -16,6 +16,19 @@ terraform.tfstate.backup
 *.tfplan
 crash.log
 
+# State at rest (P0-5) — belt-and-suspenders globs. State contains secrets.
+*.tfstate
+*.tfstate.*
+
+# TLS material (P0-1) — certs are generated locally, never committed.
+# (Private keys are already covered by *.key / *.pem above.)
+*.crt
+*.csr
+
+# Local module overrides (staging validation) — redirect module `source` to the
+# local platform-modules checkout. Gitignored so the committed tree keeps ?ref=v1.6.0.
+*_override.tf
+
 # State migration backend config — never commit this
 backend.hcl
 backend-minio.hcl
